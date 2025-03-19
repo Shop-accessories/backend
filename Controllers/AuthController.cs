@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -237,6 +237,90 @@ namespace Controllers
                 return NotFound("Avatar not found.");
 
             return Ok(new { AvatarBase64 = user.AvatarBase64 });
+        }
+        [HttpGet("docs")]
+        public IActionResult GetDocs()
+        {
+            var routes = new List<object>
+            {
+                new {
+                    Method = "POST",
+                    Route = "/api/register-user",
+                    Description = "Register a new user",
+                    Headers = "None",
+                    Body = new {
+                        UserName = "string (required)",
+                        Email = "string (required, unique)",
+                        Password = "string (required)",
+                        PhoneNumber = "string (required, unique)"
+                    }
+                },
+                new {
+                    Method = "POST",
+                    Route = "/api/register-admin",
+                    Description = "Register a new admin (Requires adminToken in the header)",
+                    Headers = new { adminToken = "string (required)" },
+                    Body = new {
+                        UserName = "string (required)",
+                        Email = "string (required, unique)",
+                        Password = "string (required)",
+                        PhoneNumber = "string (required, unique)"
+                    }
+                },
+                new {
+                    Method = "POST",
+                    Route = "/api/login",
+                    Description = "User login, returns JWT token",
+                    Headers = "None",
+                    Body = new {
+                        UserName = "string (required)",
+                        Password = "string (required)"
+                    }
+                },
+                new {
+                    Method = "POST",
+                    Route = "/api/update-avatar",
+                    Description = "Update user's avatar (Requires auth token)",
+                    Headers = new { token = "string (required, JWT token)" },
+                    Body = new { avatarBase64 = "string (required, base64-encoded image, max 1MB)" }
+                },
+                new {
+                    Method = "POST",
+                    Route = "/api/update-username",
+                    Description = "Update user's username (Requires auth token)",
+                    Headers = new { token = "string (required, JWT token)" },
+                    Body = new { newUsername = "string (required)" }
+                },
+                new {
+                    Method = "POST",
+                    Route = "/api/update-email",
+                    Description = "Update user's email (Requires auth token)",
+                    Headers = new { token = "string (required, JWT token)" },
+                    Body = new { newEmail = "string (required, unique)" }
+                },
+                new {
+                    Method = "POST",
+                    Route = "/api/update-phone-number",
+                    Description = "Update user's phone number (Requires auth token)",
+                    Headers = new { token = "string (required, JWT token)" },
+                    Body = new { newPhoneNumber = "string (required, unique)" }
+                },
+                new {
+                    Method = "GET",
+                    Route = "/api/get-avatar",
+                    Description = "Get user's avatar (Requires auth token)",
+                    Headers = new { token = "string (required, JWT token)" },
+                    Body = "None"
+                },
+                new {
+                    Method = "GET",
+                    Route = "/api/docs",
+                    Description = "API documentation",
+                    Headers = "None",
+                    Body = "None"
+                }
+            };
+            return Ok(new { API_Name = "Auth API", Version = "1.0", Routes = routes });
         }
     }
 }
