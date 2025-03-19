@@ -398,3 +398,9 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+Migrations/20250319172227_initMigration.cs
+Migrations/20250319172227_initMigration.Designer.cs
+Migrations/MainDbContextModelSnapshot.cs
+MainDatabase.db
+MainDatabase.db-shm
+MainDatabase.db-wal
