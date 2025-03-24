@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
+using System.Text.Json;
+using System.Text;
 
 namespace Controllers
 {
@@ -13,6 +11,7 @@ namespace Controllers
     public class ReviewController : ControllerBase
     {
         private readonly MainDbContext _context;
+        private string fastApiUrl = "https://bc7b-46-98-138-211.ngrok-free.app/sentiment-analysis/single";
 
         public ReviewController(MainDbContext context)
         {
@@ -59,17 +58,41 @@ namespace Controllers
             if (user == null)
                 return Unauthorized("Invalid token.");
 
+            string tonality = null;
+
+            using (var httpClient = new HttpClient())
+            {
+                try
+                {
+                    var jsonRequest = JsonSerializer.Serialize(new { review = request.Text });
+                    var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                    var response = await httpClient.PostAsync(fastApiUrl, content);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonResponse = await response.Content.ReadAsStringAsync();
+                        var result = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonResponse);
+                        result.TryGetValue("tonality", out tonality);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error calling FastAPI: {ex.Message}");
+                }
+            }
+
             var review = new Review
             {
                 Text = request.Text,
                 UserId = user.Id,
                 AccessoryId = request.AccessoryId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                Tonality = tonality
             };
 
             await _context.Reviews.AddAsync(review);
             await _context.SaveChangesAsync();
-            return Ok(new { Message = "Review created successfully." });
+            return Ok(new { Message = "Review created successfully.", Tonality = tonality });
         }
 
         [HttpGet("all")]
@@ -105,12 +128,39 @@ namespace Controllers
             if (review.UserId != user.Id && !user.IsAdmin)
                 return Forbid("You can only update your own reviews.");
 
+            string tonality = review.Tonality;
+
+            if (review.Text != updatedReviewRequest.Text)
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    try
+                    {
+                        var jsonRequest = JsonSerializer.Serialize(new { review = updatedReviewRequest.Text });
+                        var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+
+                        var response = await httpClient.PostAsync(fastApiUrl, content);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var jsonResponse = await response.Content.ReadAsStringAsync();
+                            var result = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonResponse);
+                            result.TryGetValue("tonality", out tonality);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error calling FastAPI: {ex.Message}");
+                    }
+                }
+            }
+
             review.Text = updatedReviewRequest.Text;
+            review.Tonality = tonality;
 
             _context.Reviews.Update(review);
             await _context.SaveChangesAsync();
 
-            return Ok(new { Message = "Review updated successfully." });
+            return Ok(new { Message = "Review updated successfully.", Tonality = tonality });
         }
 
         [HttpDelete("delete/{id}")]

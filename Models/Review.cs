@@ -16,4 +16,5 @@ public class Review
 
     [Required]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? Tonality { get; set; }
 }
