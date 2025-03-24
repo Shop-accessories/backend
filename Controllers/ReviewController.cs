@@ -98,10 +98,16 @@ namespace Controllers
         [HttpGet("all")]
         public async Task<ActionResult<IEnumerable<Review>>> GetAllReviews([FromHeader] string token)
         {
-            if (!await IsAdmin(token))
-                return Unauthorized("Only admins can view all reviews.");
-
             return await _context.Reviews.ToListAsync();
+        }
+        [HttpGet("category/{id}")]
+        public async Task<ActionResult<IEnumerable<Review>>> GetReviewsByCategory(int id)
+        {
+            var reviews = await _context.Reviews
+                .Where(r => r.AccessoryId == id)
+                .ToListAsync();
+
+            return Ok(reviews);
         }
 
         [HttpGet("my")]
